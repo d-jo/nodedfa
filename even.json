@@ -1,0 +1,17 @@
+{
+	"initial_state": 0,
+	"states": 2,
+	"alphabet": ["a", "b"],
+	"accept_states": [0],
+	"delta": {
+		"0": {
+			"a": 1,
+			"b": 1
+		},
+		"1": {
+			"a": 0,
+			"b": 0
+		}
+	},
+	"input": "aaaaaa"
+}
