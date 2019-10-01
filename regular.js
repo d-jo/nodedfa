@@ -19,7 +19,13 @@ function EvaluateNFA(n) {
 	let states = n["initial_state"];
 	const input = n["input"].split("");
 	input.forEach(inputChar => {
-		let statebuff = []
+		let statebuff = [];
+		states.forEach(st => {
+			const e = n["delta"][st]["e"];
+			if (e) statebuff = statebuff.concat(e);
+		});
+		states = states.concat(statebuff);
+		statebuff = [];
 		states.forEach(st => {
 			const buf = n["delta"][st][inputChar];
 			if (buf) statebuff = statebuff.concat(buf);
