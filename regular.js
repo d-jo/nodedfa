@@ -1,18 +1,30 @@
 const fs = require("fs");
 
-let fileName = "even.json";
+let fileName = "substring.json";
 let parsedFile = JSON.parse(fs.readFileSync(fileName, "utf8"));
 console.log(parsedFile);
 
-console.log(EvaluateDFA(parsedFile));
+console.log(EvaluateNFA(parsedFile));
 
 function EvaluateDFA(d) {
 	let state = d["initial_state"];
-	let input = d["input"].split("");
+	const input = d["input"].split("");
 	input.forEach(inputChar => {
 		state = d["delta"][state][inputChar];
 	});
-	let accepted = (d["accept_states"].indexOf(state) != -1);
-	return accepted;
+	return (d["accept_states"].indexOf(state) != -1);
 }
 
+function EvaluateNFA(n) {
+	let states = n["initial_state"];
+	const input = n["input"].split("");
+	input.forEach(inputChar => {
+		let statebuff = []
+		states.forEach(st => {
+			const buf = n["delta"][st][inputChar];
+			if (buf) statebuff = statebuff.concat(buf);
+		});
+		states = statebuff;
+	});
+	return n["accept_states"].some(r => states.includes(r));
+}
