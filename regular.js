@@ -104,12 +104,28 @@ function RegexToNFA2(regex) {
 		let peek = opstack[opstack.length-1];
 		if (!notBasic.includes(curr)) {
 			// basic
-			buffer.push(curr);
+			// buffer.push(curr);
+			// ext = next token
 			let ext = tokens[i+1];
-			if (ext && notBasic.includes(ext)) {
-				output.push(buffer.join(""));
-				buffer = []
+			// if ext exists and its not a basic char
+			if (ext) {
+				if (ops.includes(ext)) {
+					// + or *
+					if (buffer.length > 0) {
+						output.push(buffer.join(""));
+						buffer = []
+					}
+				}
+				if (notBasic.includes(ext)) {
+					buffer.push(curr)
+					output.push(buffer.join(""));
+					buffer = []
+				} else {
+					buffer.push(curr)
+				}
+
 			} else if (!ext) {
+				buffer.push(curr)
 				output.push(buffer.join(""));
 			}
 		} else if (ops.includes(curr)) {
@@ -143,91 +159,19 @@ function RegexToNFA2(regex) {
 	return output
 }
 
-function RegexToNfa(regex) {
-	let staten = 1;
-	let nfa = {
-		"initial_state": [0],
-		"states": 1,
-		"alphabet": alpha,
-		"accept_states": [],
-		"delta": {
-			"0": {
-				"e": [1]
-			}
-		}
-	};
-
-	let opstack = []
-	let regexChars = regex.split("");
-	for (let i = 0; i < regexChars.length; i++) {
-		let currChar = regexChars[i];
-		if (currChar == "(") {
-			opstack.push(staten);
-		} else if (currChar == ")") { 
-			if (regexChars[i + 1] && regexChars[i + 1] == "*") {
-				let starback = opstack.pop();
-				// construct epsilon here
-				nfa["delta"][staten] = {};
-				nfa["delta"][staten]["e"] = [starback, staten + 1];
-				if (nfa["delta"][starback]["e"]) {
-					nfa["delta"][starback]["e"].push(staten);
-				} else {
-					nfa["delta"][starback]["e"] = [staten];
-				}
-				staten += 1;
-				nfa["accept_states"] = [staten];
-			} else if (regexChars[i + 1] && regexChars[i + 1] == "+") {
-				let unionback = opstack.pop();
-				if (!unionback) {
-					unionback = 0;
-				}
-				nfa["delta"][staten-1]["e"] 
-				nfa["delta"][unionback-1]["e"].push();
-				nfa["accept_states"].push(staten);
-				nfa["accept_states"].push(staten);
-
-			}
-		} else if (currChar == "*") {
-			nfa["delta"][staten] = {};
-			nfa["delta"][staten]["e"] = [staten - 3, staten + 1];
-			nfa["delta"][staten - 3]["e"] = [staten]; //mark
-			if (nfa["delta"][staten - 3]["e"]) {
-				nfa["delta"][staten - 3]["e"].push(staten);
-			} else {
-				nfa["delta"][staten - 3]["e"] = [staten];
-			}
-			staten += 1;
-			nfa["accept_states"].pop();
-			nfa["accept_states"].push(staten);
-			
-		} else if (currChar == "+") {
-
-
-		} else {
-			nfa["delta"][staten] = {};
-			nfa["delta"][staten][currChar] = [staten + 1];
-			staten += 1;
-			nfa["delta"][staten] = {};
-			nfa["delta"][staten]["e"] = [staten + 1];
-			nfa["accept_states"].pop();
-			nfa["accept_states"].push(staten);
-		}
-	}
-
-	return nfa;
-}
-
-let b = RegexToNFA2("ab(ab)+(ba)+(bb)*");
+let b = RegexToNFA2("aba");
 console.log(b);
-b = RegexToNFA2("(aa)+(bb)");
+b = RegexToNFA2("ab*a*");
 console.log(b);
-b = RegexToNFA2("w(hy)+(ho)");
+b = RegexToNFA2("a+b");
 console.log(b);
-b = RegexToNFA2("why+o");
+b = RegexToNFA2("a+(bb)");
 console.log(b);
-b = RegexToNFA2("who*m");
+b = RegexToNFA2("a(bb(aa)*)*");
 console.log(b);
-b = RegexToNFA2("wh(at)*");
+b = RegexToNFA2("(aa)*(bb)*");
+console.log(b);
+b = RegexToNFA2("ho((rse)+(bbi)+t)");
 console.log(b);
 
 /*
