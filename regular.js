@@ -69,13 +69,14 @@ for (let i = 97; i <= 122; i++) {
 
 const res = {
 	"+": [1, "l"],
-	"*": [2, "r"]
+	"-": [2, "l"],
+	"*": [3, "l"]
 }
 const prec = function (op) {
 	return res[op] ? res[op] : 0;
 };
-const notBasic = ["*", "+", "(", ")"];
-const ops = ["+", "*"];
+const notBasic = ["*", "+", "-", "(", ")"];
+const ops = ["+", "*", "-"];
 
 function blankNFA() {
 	let nfa = {
@@ -93,6 +94,7 @@ function blankNFA() {
 }
 
 function RegexToNFA2(regex) {
+	console.log(regex);
 	let tokens = regex.split("");
 	//console.log(tokens);
 	let nfa = blankNFA();
@@ -159,20 +161,46 @@ function RegexToNFA2(regex) {
 	return output
 }
 
-let b = RegexToNFA2("aba");
+function implicitToExplicitConcat(regex) {
+
+	let tokens = regex.split("");
+	let copy = tokens.slice();
+	let offset = 0;
+	for (let i = 0; i < tokens.length-1; i++) {
+		let curr = tokens[i];
+		let peek = tokens[i+1];
+		if (peek != "*" && peek != "+" && peek != "-" && peek != ")" && curr != "+" && curr != "(") {
+			copy.splice(i + 1 + offset++, 0, "-");
+		}
+	}
+	return copy.join("");
+}
+
+console.log("asd")
+console.log(implicitToExplicitConcat("aba"));
+console.log(implicitToExplicitConcat("ab+a"));
+console.log(implicitToExplicitConcat("(aaaa)*"));
+let b = RegexToNFA2(implicitToExplicitConcat("(aa)*(bb)*"));
 console.log(b);
-b = RegexToNFA2("ab*a*");
-console.log(b);
-b = RegexToNFA2("a+b");
-console.log(b);
-b = RegexToNFA2("a+(bb)");
-console.log(b);
-b = RegexToNFA2("a(bb(aa)*)*");
-console.log(b);
-b = RegexToNFA2("(aa)*(bb)*");
-console.log(b);
-b = RegexToNFA2("ho((rse)+(bbi)+t)");
-console.log(b);
+
+//let b = RegexToNFA2("a-b-a");
+//console.log(b);
+//b = RegexToNFA2("a-b*-a*");
+//console.log(b);
+//b = RegexToNFA2("a+b");
+//console.log(b);
+//b = RegexToNFA2("a-a+b-b");
+//console.log(b);
+//b = RegexToNFA2("a+(b-b)");
+//console.log(b);
+//b = RegexToNFA2("a-(b-b-(a-a)*)*");
+//console.log(b);
+//b = RegexToNFA2("a((aa)+(bb)(aa)*)*");
+//console.log(b);
+//b = RegexToNFA2("(aa)*(bb)*");
+//console.log(b);
+//b = RegexToNFA2("ho((rse)+(bbi)+t)");
+//console.log(b);
 
 /*
 Object.keys(b["delta"]).forEach(key => {
