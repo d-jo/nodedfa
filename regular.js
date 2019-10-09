@@ -15,23 +15,57 @@ function EvaluateDFA(d) {
 	return (d["accept_states"].indexOf(state) != -1);
 }
 
+
+const E_DEPTH = 5;
+
 function EvaluateNFA(n) {
-	let states = n["initial_state"];
+	let states = [n["initial_state"]];
 	const input = n["input"].split("");
 	input.forEach(inputChar => {
 		let statebuff = [];
-		states.forEach(st => {
-			const e = n["delta"][st]["e"];
-			if (e) statebuff = statebuff.concat(e);
-		});
-		states = states.concat(statebuff);
+		for (let i = 0; i < E_DEPTH; i++) {
+			statebuff = [];
+			states.forEach(st => {
+				const e = n["delta"][st]["e"];
+				if (e && !statebuff.includes(e) && !states.includes(e)) { 
+					statebuff = statebuff.concat(e)
+				}
+			});
+			//states = states.concat(statebuff);
+			statebuff.forEach(i => {
+				if (!states.includes(i)) {
+					states.push(i);
+				}
+			});
+		}
 		statebuff = [];
+		// st
+		console.log(inputChar + " | " + states);
 		states.forEach(st => {
 			const buf = n["delta"][st][inputChar];
 			if (buf) statebuff = statebuff.concat(buf);
 		});
 		states = statebuff;
 	});
+	for (let i = 0; i < E_DEPTH; i++) {
+		statebuff = [];
+		console.log(states);
+		states.forEach(st => {
+			const e = n["delta"][st]["e"];
+			if (e && !statebuff.includes(e) && !states.includes(e)) { 
+				statebuff = statebuff.concat(e)
+			}
+		});
+		//states = states.concat(statebuff);
+		statebuff.forEach(i => {
+			if (!states.includes(i)) {
+				states.push(i);
+			}
+		});
+	}
+	console.log("===");
+	console.log(states);
+	
 	return n["accept_states"].some(r => states.includes(r));
 }
 
@@ -69,14 +103,14 @@ for (let i = 97; i <= 122; i++) {
 
 const res = {
 	"+": [1, "l"],
-	"-": [2, "l"],
+	"&": [2, "l"],
 	"*": [3, "l"]
 }
 const prec = function (op) {
 	return res[op] ? res[op] : 0;
 };
-const notBasic = ["*", "+", "-", "(", ")"];
-const ops = ["+", "*", "-"];
+const notBasic = ["*", "+", "&", "(", ")"];
+const ops = ["+", "*", "&"];
 
 function blankNFA() {
 	let nfa = {
@@ -93,11 +127,10 @@ function blankNFA() {
 	return nfa;
 }
 
-function RegexToNFA2(regex) {
-	console.log(regex);
+
+function regexToPolish(regex) {
 	let tokens = regex.split("");
 	//console.log(tokens);
-	let nfa = blankNFA();
 	let output = [];
 	let opstack = [];
 	let buffer = [];
@@ -161,47 +194,159 @@ function RegexToNFA2(regex) {
 	return output
 }
 
-function implicitToExplicitConcat(regex) {
+function RegexToNFA2(regex, implicit) {
+	console.log(regex);
+	let stack
+	if (implicit) {
+		stack = regexToPolish(implicitToExplicitConcat(regex));
+	} else {
+		stack = regexToPolish(regex);
+	}
 
+	console.log(stack);
+	return regexRecursive(stack);
+
+}
+
+function baseNFA(r, st) {
+	let nfa = {
+		"initial_state": [st],
+		"states": 4,
+		"accept_states": [st+3],
+		"delta": {
+		}
+	};
+	for (let i = 0; i < 4; i++) {
+		nfa["delta"][st+i] = {};
+	}
+	nfa["delta"][st]["e"] = [st+1];
+	nfa["delta"][st+1][r] = [st+2];
+	nfa["delta"][st+2]["e"] = [st+3];
+	nfa["delta"][st+3] = {};
+	staten += 4;
+	return nfa;
+}
+
+function kleen(base) {
+	let end = base["accept_states"];
+	let start = base["initial_state"];
+	let statenlocal = base["states"];
+	let newDelta = base["delta"];
+	console.log(staten);
+	newDelta[statenlocal] = {};
+	newDelta[statenlocal+1] = {};
+	newDelta[statenlocal]["e"] = [staten+1,start];
+	newDelta[statenlocal+1]["e"] = [staten]
+	if (newDelta[end]["e"])	{
+		newDelta[end]["e"].push(statenlocal);
+	} else {
+		newDelta[end]["e"] = [statenlocal];
+	}
+	let nfa = {
+		"initial_state": statenlocal,
+		"states": base["states"] + 2,
+		"accept_states": [statenlocal + 1],
+		"delta": newDelta,
+	}
+	//staten += 2;
+	return nfa;
+}
+
+function prepend(base, prefix) {
+	let nfa = {
+		"initial_state": prefix.initial_state,
+		"states": base.states + prefix.states,
+		"accept_states": base.accept_states,
+		"delta": {
+		}
+	};
+
+	let newDelta = prefix["delta"];
+	let keys = Object.keys(base["delta"]);
+	for (let i = 0; i < keys.length; i++) {
+		newDelta[keys[i]] = base["delta"][keys[i]];
+	}
+	newDelta[prefix["accept_states"][0]]["e"] = [base["initial_state"][0]];
+	nfa["delta"] = newDelta;
+	return nfa;
+}
+
+function union(l1, l2) {
+
+}
+
+
+var staten = 0
+function regexRecursive(tokenStack) {
+	//base case
+	//recursive case
+	console.log(tokenStack);
+	console.log(tokenStack.length);
+	let curr = tokenStack.pop();
+	console.log(tokenStack)
+	if (curr == "*") {
+		return kleen(regexRecursive(tokenStack));
+	} else if (curr == "&") {
+		let l1 = regexRecursive(tokenStack);
+		let l2 = regexRecursive(tokenStack);
+		return prepend(l1, l2);
+	} else if (curr == "+") {
+		let l1 = regexRecursive(tokenStack);
+		let l2 = regexRecursive(tokenStack);
+		return union(l1, l2);
+	} else {
+		return baseNFA(curr, staten);
+	}
+}
+
+function implicitToExplicitConcat(regex) {
+	console.log(regex)
 	let tokens = regex.split("");
 	let copy = tokens.slice();
 	let offset = 0;
 	for (let i = 0; i < tokens.length-1; i++) {
 		let curr = tokens[i];
 		let peek = tokens[i+1];
-		if (peek != "*" && peek != "+" && peek != "-" && peek != ")" && curr != "+" && curr != "(") {
-			copy.splice(i + 1 + offset++, 0, "-");
+		if (peek != "*" && peek != "+" && peek != "&" && peek != ")" && curr != "+" && curr != "(") {
+			copy.splice(i + 1 + offset++, 0, "&");
 		}
 	}
 	return copy.join("");
 }
 
-console.log("asd")
-console.log(implicitToExplicitConcat("aba"));
-console.log(implicitToExplicitConcat("ab+a"));
-console.log(implicitToExplicitConcat("(aaaa)*"));
-let b = RegexToNFA2(implicitToExplicitConcat("(aa)*(bb)*"));
+function logNFA(nfa) {
+	console.log("Initial state: \t" + nfa["initial_state"]);
+	console.log("Accept states: \t" + nfa["accept_states"]);
+	console.log("Total states: \t" + nfa["states"]);
+	let keys = Object.keys(nfa["delta"]);
+	keys.forEach((k) => {
+		let obj = nfa["delta"][k];
+		Object.keys(obj).forEach(k2 => {
+			console.log(k + " | " + k2 + " | " + obj[k2]);
+		})
+	})
+}
+
+
+
+
+
+let b = RegexToNFA2("ba*", true);
+b["input"] = "baaa";
+console.log(b);
+logNFA(b);
+console.log(EvaluateNFA(b));
+
+/*
+b = RegexToNFA2("a*b*", true);
 console.log(b);
 
-//let b = RegexToNFA2("a-b-a");
-//console.log(b);
-//b = RegexToNFA2("a-b*-a*");
-//console.log(b);
-//b = RegexToNFA2("a+b");
-//console.log(b);
-//b = RegexToNFA2("a-a+b-b");
-//console.log(b);
-//b = RegexToNFA2("a+(b-b)");
-//console.log(b);
-//b = RegexToNFA2("a-(b-b-(a-a)*)*");
-//console.log(b);
-//b = RegexToNFA2("a((aa)+(bb)(aa)*)*");
-//console.log(b);
-//b = RegexToNFA2("(aa)*(bb)*");
-//console.log(b);
-//b = RegexToNFA2("ho((rse)+(bbi)+t)");
-//console.log(b);
+b = RegexToNFA2("(a*b*)*", true);
+console.log(b);
 
+b = RegexToNFA2("((aa)*(bb)*)*", true);
+console.log(b);
+*/
 /*
 Object.keys(b["delta"]).forEach(key => {
 	console.log(key + " - " + b["delta"][key]);
