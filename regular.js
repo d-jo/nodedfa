@@ -16,7 +16,7 @@ function EvaluateDFA(d) {
 }
 
 
-const E_DEPTH = 5;
+const E_DEPTH = 10;
 
 function EvaluateNFA(n) {
 	let states = [n["initial_state"]];
@@ -270,7 +270,11 @@ function prepend(base, prefix) {
 	for (let i = 0; i < keys.length; i++) {
 		newDelta[keys[i]] = base["delta"][keys[i]];
 	}
-	newDelta[prefix["accept_states"][0]]["e"] = [base["initial_state"][0]];
+	if (newDelta[prefix["accept_states"][0]]["e"]) {
+		newDelta[prefix["accept_states"][0]]["e"].push(base["initial_state"][0]);
+	} else {
+		newDelta[prefix["accept_states"][0]]["e"] = [base["initial_state"][0]];
+	}
 	nfa["delta"] = newDelta;
 	return nfa;
 }
@@ -335,10 +339,11 @@ function logNFA(nfa) {
 
 
 
-let b = RegexToNFA2("ba*", true);
-b["input"] = "baaaaaaaa";
+let b = RegexToNFA2("hel*o", true);
+b["input"] = "helllllllllo";
 console.log(b);
 logNFA(b);
+console.log("---");
 console.log(EvaluateNFA(b));
 
 
