@@ -228,27 +228,31 @@ function baseNFA(r, st) {
 }
 
 function kleen(base) {
-	let end = base["accept_states"];
-	let start = base["initial_state"];
-	let statenlocal = base["states"];
+	let end = base["accept_states"].slice();
+	let start = base["initial_state"].slice();
 	let newDelta = base["delta"];
-	console.log(staten);
-	newDelta[statenlocal] = {};
-	newDelta[statenlocal+1] = {};
-	newDelta[statenlocal]["e"] = [staten+1,start];
-	newDelta[statenlocal+1]["e"] = [staten]
-	if (newDelta[end]["e"])	{
-		newDelta[end]["e"].push(statenlocal);
+	// consider just linking the start and end up with epsilons directly, instead
+	// of trying to add another couple states.
+	//
+	
+	if (newDelta[start[0]]["e"]) {
+		newDelta[start[0]]["e"].push(end[0]);
 	} else {
-		newDelta[end]["e"] = [statenlocal];
+		newDelta[start[0]]["e"] = [end[0]];
 	}
+	if (newDelta[end[0]]["e"]) {
+		newDelta[end[0]]["e"].push(start[0]);
+	} else {
+		newDelta[end[0]]["e"] = [start[0]];
+	}
+
+
 	let nfa = {
-		"initial_state": statenlocal,
-		"states": base["states"] + 2,
-		"accept_states": [statenlocal + 1],
+		"initial_state": start,
+		"states": base["states"],
+		"accept_states": end,
 		"delta": newDelta,
 	}
-	//staten += 2;
 	return nfa;
 }
 
@@ -332,33 +336,10 @@ function logNFA(nfa) {
 
 
 let b = RegexToNFA2("ba*", true);
-b["input"] = "baaa";
+b["input"] = "baaaaaaaa";
 console.log(b);
 logNFA(b);
 console.log(EvaluateNFA(b));
-
-/*
-b = RegexToNFA2("a*b*", true);
-console.log(b);
-
-b = RegexToNFA2("(a*b*)*", true);
-console.log(b);
-
-b = RegexToNFA2("((aa)*(bb)*)*", true);
-console.log(b);
-*/
-/*
-Object.keys(b["delta"]).forEach(key => {
-	console.log(key + " - " + b["delta"][key]);
-	console.log(b["delta"][key])
-});
-b["input"] = "aaa";
-let res = EvaluateNFA(b);
-console.log(res);
-b["input"] = "aaaba";
-res = EvaluateNFA(b);
-console.log(res);
-*/
 
 
 
