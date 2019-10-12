@@ -28,7 +28,7 @@ function EvaluateNFA(n) {
 			states.forEach(st => {
 				const e = n["delta"][st]["e"];
 				if (e && !statebuff.includes(e) && !states.includes(e)) { 
-					statebuff = statebuff.concat(e)
+					statebuff = statebuff.concat(e);
 				}
 			});
 			//states = states.concat(statebuff);
@@ -40,7 +40,7 @@ function EvaluateNFA(n) {
 		}
 		statebuff = [];
 		// st
-		console.log(inputChar + " | " + states);
+		//console.log(inputChar + " | " + states);
 		states.forEach(st => {
 			const buf = n["delta"][st][inputChar];
 			if (buf) statebuff = statebuff.concat(buf);
@@ -49,7 +49,7 @@ function EvaluateNFA(n) {
 	});
 	for (let i = 0; i < E_DEPTH; i++) {
 		statebuff = [];
-		console.log(states);
+		//console.log(states);
 		states.forEach(st => {
 			const e = n["delta"][st]["e"];
 			if (e && !statebuff.includes(e) && !states.includes(e)) { 
@@ -63,8 +63,8 @@ function EvaluateNFA(n) {
 			}
 		});
 	}
-	console.log("===");
-	console.log(states);
+	//console.log("===");
+	//console.log(states);
 	
 	return n["accept_states"].some(r => states.includes(r));
 }
@@ -280,7 +280,35 @@ function prepend(base, prefix) {
 }
 
 function union(l1, l2) {
+	let nfa = {
+		"initial_state": l1["initial_state"],
+		"states": l1["states"] + l2["states"],
+		"accept_states": l1["accept_states"],
+		"delta": {}
+	}
 
+	let newDelta = l1["delta"]
+
+	let keys = Object.keys(l2["delta"]);
+	for (let obj in keys) {
+		newDelta[keys[obj]] = l2["delta"][keys[obj]];
+	}
+
+	if (newDelta[l1["initial_state"][0]]["e"]) {
+		newDelta[l1["initial_state"][0]]["e"].push(l2["initial_state"]);
+	} else {
+		newDelta[l1["initial_state"][0]]["e"] = [l2["initial_state"]];
+	}
+	//console.log(l2["accept_states"])
+
+	if (newDelta[l2["accept_states"]]["e"]) {
+		newDelta[l2["accept_states"]]["e"].push(l1["accept_states"])
+	} else {
+		newDelta[l2["accept_states"]]["e"] = l1["accept_states"]
+	}
+
+	nfa["delta"] = newDelta;
+	return nfa;
 }
 
 
@@ -339,8 +367,8 @@ function logNFA(nfa) {
 
 
 
-let b = RegexToNFA2("hel*o", true);
-b["input"] = "helllllllllo";
+let b = RegexToNFA2("(hello)+(home)", true);
+b["input"] = "helo";
 console.log(b);
 logNFA(b);
 console.log("---");
